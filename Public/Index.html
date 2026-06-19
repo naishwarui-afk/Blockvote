@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BlockVote • Blockchain Voting System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0a0a1f 0%, #1a1533 50%, #2e1f5e 100%);
+      color: #e0e0ff;
+      min-height: 100vh;
+    }
+    .glass {
+      background: rgba(255,255,255,0.08);
+      backdrop-filter: blur(25px);
+      border: 1px solid rgba(255,255,255,0.15);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+    .dark-container {
+      background: rgba(15,23,42,0.75);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .section { display: none; }
+    .vote-btn {
+      transition: all 0.3s ease;
+    }
+    .vote-btn:hover {
+      transform: scale(1.08);
+      box-shadow: 0 0 50px rgba(129,140,248,0.6);
+    }
+  </style>
+</head>
+<body class="pt-20">
+
+  <!-- NAVBAR -->
+  <nav class="glass fixed top-0 w-full z-50 py-5 px-8 flex justify-between items-center">
+    <div class="flex items-center gap-4">
+      <div class="text-4xl">🔗</div>
+      <h1 class="text-3xl font-bold tracking-tight" style="font-family: 'Space Grotesk';">BlockVote</h1>
+    </div>
+
+    <div class="flex gap-8 text-sm font-medium">
+      <button onclick="showSection('home')" class="hover:text-indigo-400">Home</button>
+      <button onclick="showSection('vote')" class="hover:text-indigo-400">Vote</button>
+      <button onclick="showSection('results')" class="hover:text-indigo-400">Results</button>
+      <button onclick="showSection('blockchain')" class="hover:text-indigo-400">Blockchain</button>
+      <button onclick="showAdminLogin()" class="text-amber-400 hover:text-amber-300 font-medium">Admin</button>
+    </div>
+
+    <div id="user-info" class="hidden items-center gap-4">
+      <span id="user-display" class="text-sm px-4 py-2 glass rounded-2xl"></span>
+      <button onclick="logout()" class="px-5 py-2 border border-red-400/50 rounded-2xl hover:bg-red-500/10">Logout</button>
+    </div>
+
+    <button id="login-btn" onclick="showLoginModal()" class="glass px-6 py-3 rounded-2xl flex items-center gap-2 hover:bg-white/10">
+      <i class="fas fa-fingerprint"></i> Voter Login
+    </button>
+  </nav>
+
+  <!-- HOME -->
+  <div id="home-section" class="section text-center py-32 px-6">
+    <div class="max-w-4xl mx-auto">
+      <div class="inline-flex items-center gap-3 glass px-8 py-3 rounded-3xl mb-10">
+        <div class="w-4 h-4 bg-emerald-400 rounded-full animate-pulse"></div>
+        <span class="uppercase tracking-[3px] text-sm font-medium">SECURE • TRANSPARENT • IMMUTABLE</span>
+      </div>
+      <h1 class="text-7xl font-bold leading-tight mb-6" style="font-family: 'Space Grotesk';">
+        Your Voice.<br>
+        <span class="bg-gradient-to-r from-indigo-400 via-purple-400 to-violet-400 bg-clip-text text-transparent">Secured Forever.</span>
+      </h1>
+      <p class="text-2xl text-indigo-200 max-w-2xl mx-auto mb-12">A decentralized voting platform built on blockchain technology.</p>
+      <button onclick="showLoginModal()" class="vote-btn px-16 py-6 text-xl font-semibold bg-gradient-to-r from-indigo-600 to-violet-600 rounded-3xl">Start Voting Securely</button>
+    </div>
+  </div>
+
+  <!-- VOTE -->
+  <div id="vote-section" class="section p-10 max-w-6xl mx-auto">
+    <h2 class="text-5xl font-bold mb-10 text-center">Cast Your Vote</h2>
+    <div id="candidates-grid" class="grid md:grid-cols-3 gap-8"></div>
+  </div>
+
+  <!-- PUBLIC RESULTS -->
+  <div id="results-section" class="section p-10 max-w-6xl mx-auto">
+    <h2 class="text-5xl font-bold mb-10 text-center">Live Election Results</h2>
+    <div id="results-grid" class="grid md:grid-cols-3 gap-8"></div>
+  </div>
+
+  <!-- PUBLIC BLOCKCHAIN -->
+  <div id="blockchain-section" class="section p-10 max-w-6xl mx-auto">
+    <h2 class="text-5xl font-bold mb-10">Public Blockchain Explorer</h2>
+    <div id="chain-container" class="space-y-8"></div>
+  </div>
+
+  <!-- ADMIN LOGIN MODAL -->
+  <div id="admin-login-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-[100]">
+    <div class="glass p-10 rounded-3xl w-full max-w-md">
+      <h2 class="text-3xl font-bold text-center mb-8 text-amber-400">Admin Dashboard Login</h2>
+      <input id="admin-username" value="DIT-02-0260/2025" readonly class="dark-container w-full mb-4 p-5 rounded-2xl">
+      <input id="admin-password" type="password" placeholder="Password" class="dark-container w-full mb-8 p-5 rounded-2xl">
+      <button onclick="handleAdminLogin()" class="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-600 rounded-2xl font-semibold text-lg">Access Admin Dashboard</button>
+    </div>
+  </div>
+
+  <!-- ADMIN DASHBOARD -->
+  <div id="admin-section" class="section p-10 max-w-7xl mx-auto">
+    <div class="flex justify-between items-center mb-12">
+      <div>
+        <h2 class="text-5xl font-bold">Admin Dashboard</h2>
+        <p class="text-amber-400 mt-1">DIT-02-0260/2025 • Full Control</p>
+      </div>
+      <div class="flex gap-4">
+        <button onclick="exportBlockchain()" class="glass px-6 py-3 rounded-2xl flex items-center gap-2 hover:bg-white/10">
+          <i class="fas fa-download"></i> Export JSON
+        </button>
+        <button onclick="resetVotes()" class="glass px-6 py-3 rounded-2xl flex items-center gap-2 text-red-400 hover:bg-red-500/10">
+          <i class="fas fa-trash"></i> Reset All Votes
+        </button>
+        <button onclick="logoutAdmin()" class="px-8 py-3 border border-red-400/50 rounded-2xl hover:bg-red-500/10">Logout</button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+      <div class="glass p-8 rounded-3xl text-center">
+        <p class="text-gray-400">Registered Voters</p>
+        <p id="registered-count" class="text-6xl font-bold text-emerald-400 mt-4">0</p>
+      </div>
+      <div class="glass p-8 rounded-3xl text-center">
+        <p class="text-gray-400">Votes Cast</p>
+        <p id="votes-cast" class="text-6xl font-bold text-violet-400 mt-4">0</p>
+      </div>
+      <div class="glass p-8 rounded-3xl text-center">
+        <p class="text-gray-400">Blockchain Status</p>
+        <p class="text-4xl font-bold text-emerald-400 mt-4">SECURE</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+      <!-- Live Results -->
+      <div>
+        <h3 class="text-3xl font-semibold mb-6 flex items-center gap-3"><i class="fas fa-chart-bar"></i> Live Results</h3>
+        <div id="admin-results-grid" class="grid gap-6"></div>
+      </div>
+
+      <!-- Blockchain Explorer -->
+      <div>
+        <div class="flex justify-between mb-6">
+          <h3 class="text-3xl font-semibold flex items-center gap-3"><i class="fas fa-link"></i> Blockchain Explorer</h3>
+          <button onclick="adminValidateBlockchain()" class="glass px-6 py-3 rounded-2xl flex items-center gap-2 hover:bg-emerald-500/10">
+            <i class="fas fa-shield-alt"></i> Validate Chain
+          </button>
+        </div>
+        <div id="admin-validation-status" class="hidden mb-6 p-6 rounded-3xl text-center"></div>
+        <div id="admin-chain-container" class="space-y-6 max-h-[65vh] overflow-auto pr-4"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// ==================== GLOBAL VARIABLES ====================
+let token = null;
+let currentUser = null;
+let adminToken = null;
+
+const candidates = [
+  { name: "Alice Chen", party: "Forward Party" },
+  { name: "Bob Rivera", party: "Unity Alliance" },
+  { name: "Carol Patel", party: "People's Voice" }
+];
+
+// ==================== SECTION NAVIGATION ====================
+function showSection(section) {
+  document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
+  document.getElementById(section + '-section').style.display = 'block';
+
+  if (section === 'vote') loadCandidates();
+  if (section === 'results') loadResults();
+  if (section === 'blockchain') loadBlockchain();
+  if (section === 'admin') loadAdminDashboard();
+}
+
+// ==================== VOTER FUNCTIONS ====================
+function showLoginModal() {
+  document.getElementById('login-modal').classList.remove('hidden');
+  document.getElementById('login-modal').classList.add('flex');
+}
+
+// Register (Voter)
+async function handleRegister() {
+  const nationalId = document.getElementById('nationalId').value.trim();
+  const fullName = document.getElementById('fullName').value.trim();
+  const password = document.getElementById('password').value;
+
+  if (!nationalId || !fullName || !password) return alert("All fields are required");
+
+  const res = await fetch('/api/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nationalId, fullName, password })
+  });
+
+  const data = await res.json();
+  alert(data.message || data.error);
+}
+
+// Login (Voter)
+async function handleLogin() {
+  const nationalId = document.getElementById('nationalId').value.trim();
+  const password = document.getElementById('password').value;
+
+  if (!nationalId || !password) return alert("National ID and password required");
+
+  const res = await fetch('/api/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nationalId, password })
+  });
+
+  const data = await res.json();
+
+  if (res.ok) {
+    token = data.token;
+    currentUser = data.user;
+
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(currentUser));
+
+    document.getElementById('login-modal').classList.add('hidden');
+    document.getElementById('login-btn').classList.add('hidden');
+    document.getElementById('user-info').classList.remove('hidden');
+    document.getElementById('user-display').textContent = `${currentUser.fullName} (${currentUser.nationalId})`;
+
+    showSection('vote');
+  } else {
+    alert(data.error);
+  }
+}
+
+// Load Candidates
+function loadCandidates() {
+  const grid = document.getElementById('candidates-grid');
+  grid.innerHTML = '';
+
+  candidates.forEach(c => {
+    grid.innerHTML += `
+      <div class="glass p-8 rounded-3xl text-center">
+        <div class="text-6xl mb-6">👤</div>
+        <h3 class="text-2xl font-semibold mb-2">${c.name}</h3>
+        <p class="text-indigo-300 mb-8">${c.party}</p>
+        <button onclick="castVote('${c.name}')" 
+          class="vote-btn w-full py-4 bg-gradient-to-r from-indigo-600 to-violet-600 rounded-2xl font-semibold text-lg">
+          Vote for ${c.name.split(' ')[0]}
+        </button>
+      </div>`;
+  });
+}
+
+// Cast Vote
+async function castVote(candidate) {
+  if (!token) return alert("Please login first");
+
+  const res = await fetch('/api/vote', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ candidate })
+  });
+
+  const data = await res.json();
+  alert(data.success ? data.message : data.error);
+}
+
+// Load Public Results
+async function loadResults() {
+  const res = await fetch('/api/results');
+  const data = await res.json();
+
+  const grid = document.getElementById('results-grid');
+  grid.innerHTML = '';
+
+  Object.keys(data.votes || {}).forEach(name => {
+    const percent = data.totalVotes ? Math.round((data.votes[name] / data.totalVotes) * 100) : 0;
+    grid.innerHTML += `
+      <div class="glass p-8 rounded-3xl">
+        <h3 class="text-2xl font-medium">${name}</h3>
+        <div class="text-6xl font-bold text-emerald-400 mt-4">${data.votes[name]}</div>
+        <p class="text-indigo-300">${percent}% of total votes</p>
+      </div>`;
+  });
+}
+
+// Load Public Blockchain
+async function loadBlockchain() {
+  const res = await fetch('/api/chain');
+  const blocks = await res.json();
+
+  const container = document.getElementById('chain-container');
+  container.innerHTML = '';
+
+  blocks.forEach(block => {
+    const isGenesis = block.index === 0;
+    container.innerHTML += `
+      <div class="glass p-8 rounded-3xl">
+        <div class="flex justify-between">
+          <span class="text-4xl font-bold text-violet-400">Block #${block.index}</span>
+          ${isGenesis ? `<span class="px-5 py-2 bg-emerald-400/20 text-emerald-400 rounded-2xl text-sm">GENESIS</span>` : ''}
+        </div>
+        <p class="mt-4"><span class="text-gray-400">Time:</span> ${new Date(block.timestamp).toLocaleString()}</p>
+        <p class="mt-2"><span class="text-gray-400">Data:</span> ${block.data?.candidate || block.data?.message || '—'}</p>
+        <p class="mt-6 font-mono text-xs break-all text-violet-300">${block.hash}</p>
+      </div>`;
+  });
+}
+
+// Logout Voter
+function logout() {
+  localStorage.clear();
+  location.reload();
+}
+
+// ==================== ADMIN FUNCTIONS ====================
+function showAdminLogin() {
+  document.getElementById('admin-login-modal').classList.remove('hidden');
+  document.getElementById('admin-login-modal').classList.add('flex');
+}
+
+async function handleAdminLogin() {
+  const username = document.getElementById('admin-username').value;
+  const password = document.getElementById('admin-password').value;
+
+  const res = await fetch('/api/admin/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password })
+  });
+
+  const data = await res.json();
+
+  if (data.success) {
+    adminToken = data.token;
+    localStorage.setItem('adminToken', adminToken);
+    document.getElementById('admin-login-modal').classList.add('hidden');
+    showSection('admin');
+    loadAdminDashboard();
+  } else {
+    alert(data.error);
+  }
+}
+
+async function loadAdminDashboard() {
+  const headers = { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` };
+
+  const res = await fetch('/api/admin/results', { headers });
+  const data = await res.json();
+
+  document.getElementById('registered-count').textContent = data.registeredVoters || 0;
+  document.getElementById('votes-cast').textContent = data.totalVotes || 0;
+
+  renderAdminResults(data);
+
+  const chainRes = await fetch('/api/admin/chain', { headers });
+  const blocks = await chainRes.json();
+  renderAdminBlockchain(blocks);
+}
+
+function renderAdminResults(data) {
+  const grid = document.getElementById('admin-results-grid');
+  grid.innerHTML = '';
+  Object.keys(data.votes || {}).forEach(name => {
+    const percent = data.totalVotes ? Math.round((data.votes[name] / data.totalVotes) * 100) : 0;
+    grid.innerHTML += `
+      <div class="glass p-8 rounded-3xl">
+        <h4 class="text-2xl font-medium">${name}</h4>
+        <div class="text-6xl font-bold text-emerald-400 mt-4">${data.votes[name]}</div>
+        <p class="text-indigo-300 mt-1">${percent}%</p>
+      </div>`;
+  });
+}
+
+function renderAdminBlockchain(blocks) {
+  const container = document.getElementById('admin-chain-container');
+  container.innerHTML = '';
+  blocks.forEach(block => {
+    const isGenesis = block.index === 0;
+    container.innerHTML += `
+      <div class="glass p-8 rounded-3xl">
+        <div class="flex justify-between items-start">
+          <span class="text-4xl font-bold text-violet-400">Block #${block.index}</span>
+          ${isGenesis ? `<span class="px-5 py-2 bg-emerald-400/20 text-emerald-400 rounded-2xl text-sm">GENESIS</span>` : ''}
+        </div>
+        <p class="mt-4 text-sm"><span class="text-gray-400">Time:</span> ${new Date(block.timestamp).toLocaleString()}</p>
+        <p class="mt-2 text-sm"><span class="text-gray-400">Data:</span> ${block.data?.candidate || block.data?.message || '—'}</p>
+        <p class="mt-6 font-mono text-xs break-all text-violet-300">${block.hash}</p>
+      </div>`;
+  });
+}
+
+async function adminValidateBlockchain() {
+  const statusDiv = document.getElementById('admin-validation-status');
+  statusDiv.classList.remove('hidden');
+  statusDiv.innerHTML = `<i class="fas fa-spinner fa-spin mr-3"></i> Validating...`;
+
+  const res = await fetch('/api/admin/validate', {
+    headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
+  });
+  const result = await res.json();
+
+  if (result.valid) {
+    statusDiv.innerHTML = `✅ ${result.message}`;
+    statusDiv.style.backgroundColor = 'rgba(16, 185, 129, 0.2)';
+  } else {
+    statusDiv.innerHTML = `❌ ${result.message}`;
+    statusDiv.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
+  }
+}
+
+async function resetVotes() {
+  if (!confirm("⚠️ This will delete ALL votes and reset voter status. Continue?")) return;
+
+  const res = await fetch('/api/admin/reset', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
+  });
+
+  const data = await res.json();
+  alert(data.message || data.error);
+  if (data.success) loadAdminDashboard();
+}
+
+async function exportBlockchain() {
+  const res = await fetch('/api/admin/export', {
+    headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
+  });
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'blockchain-export.json';
+  a.click();
+  window.URL.revokeObjectURL(url);
+}
+
+function logoutAdmin() {
+  localStorage.removeItem('adminToken');
+  showSection('home');
+}
+
+// ==================== AUTO LOGIN & INIT ====================
+window.onload = () => {
+  const savedToken = localStorage.getItem('token');
+  if (savedToken) {
+    token = savedToken;
+    currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    document.getElementById('login-btn').classList.add('hidden');
+    document.getElementById('user-info').classList.remove('hidden');
+    document.getElementById('user-display').textContent = `${currentUser.fullName} (${currentUser.nationalId})`;
+  }
+
+  const savedAdminToken = localStorage.getItem('adminToken');
+  if (savedAdminToken) {
+    adminToken = savedAdminToken;
+    showSection('admin');
+  } else {
+    showSection('home');
+  }
+};
+</script>
+
+<!-- LOGIN MODAL (Voter) -->
+<div id="login-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-[100]">
+  <div class="glass p-10 rounded-3xl w-full max-w-md">
+    <h2 class="text-3xl font-bold text-center mb-8">Voter Login / Register</h2>
+    <input id="nationalId" placeholder="National ID Number" class="dark-container w-full mb-4 p-5 rounded-2xl">
+    <input id="fullName" placeholder="Full Name" class="dark-container w-full mb-4 p-5 rounded-2xl">
+    <input id="password" type="password" placeholder="Password" class="dark-container w-full mb-8 p-5 rounded-2xl">
+    <div class="grid grid-cols-2 gap-4">
+      <button onclick="handleRegister()" class="py-4 border border-white/30 rounded-2xl hover:bg-white/10">Register</button>
+      <button onclick="handleLogin()" class="py-4 bg-gradient-to-r from-indigo-500 to-violet-600 rounded-2xl font-semibold">Login</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
